@@ -1,22 +1,55 @@
 <script setup>
-import { ref } from 'vue'
 import { supabase } from '../supabase'
+import { onMounted, ref, toRefs } from 'vue'
 
-const loading = ref(false)
-const email = ref('')
+const props = defineProps(['session'])
+const { session } = toRefs(props)
 
-const handleLogin = async () => {
+const loading = ref(true)
+
+onMounted(() => {
+  getProfile()
+})
+
+async function getProfile() {
   try {
     loading.value = true
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.value,
-    })
-    if (error) throw error
-    alert('Check your email for the login link!')
+    const { user } = session.value
+
   } catch (error) {
-    if (error instanceof Error) {
-      alert(error.message)
+    alert(error.message)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function updateProfile() {
+  try {
+    loading.value = true
+    const { user } = session.value
+
+    const updates = {
+      id: user.id,
+      updated_at: new Date(),
     }
+
+    const { error } = await supabase.from('profiles').upsert(updates)
+
+    if (error) throw error
+  } catch (error) {
+    alert(error.message)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function signOut() {
+  try {
+    loading.value = true
+    const { error } = await supabase.auth.signOut()
+    if (error) throw error
+  } catch (error) {
+    alert(error.message)
   } finally {
     loading.value = false
   }
@@ -24,21 +57,14 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <form class="row flex-center flex" @submit.prevent="handleLogin">
-    <div class="col-6 form-widget">
-      <h1 class="header">Supabase + Vue 3</h1>
-      <p class="description">Sign in via magic link with your email below</p>
-      <div>
-        <input class="inputField" required type="email" placeholder="Your email" v-model="email" />
-      </div>
-      <div>
-        <input
-          type="submit"
-          class="button block"
-          :value="loading ? 'Loading' : 'Send magic link'"
-          :disabled="loading"
-        />
-      </div>
+  <form class="form-widget" @submit.prevent="updateProfile">
+    <div>
+      <label for="email">Email</label>
+      <input id="email" type="text" :value="session.user.email" disabled />
+    </div>
+
+    <div>
+      <button class="button block" @click="signOut" :disabled="loading">Sign Out</button>
     </div>
   </form>
 </template>
