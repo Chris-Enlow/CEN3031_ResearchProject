@@ -63,9 +63,14 @@ async function signOut() {
       <label for="email">Email</label>
       <input id="email" type="text" :value="session.user.email" disabled />
     </div>
-
+    
     <div>
       <button class="button block" @click="signOut" :disabled="loading">Sign Out</button>
     </div>
+
+    <img src="/healthyFood.png"
+      width="500" 
+     height="350">
+
   </form>
 </template>
