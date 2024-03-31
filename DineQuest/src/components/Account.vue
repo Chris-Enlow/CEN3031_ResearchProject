@@ -6,6 +6,7 @@ const props = defineProps(['session'])
 const { session } = toRefs(props)
 
 const loading = ref(true)
+const points = 0
 
 onMounted(() => {
   getProfile()
@@ -15,6 +16,18 @@ async function getProfile() {
   try {
     loading.value = true
     const { user } = session.value
+
+    const { data, error, status } = await supabase
+      .from('profiles')
+      .select(`points`)
+      .eq('id', user.id)
+      .single()
+
+    if (error && status !== 406) throw error
+
+    if (data) {
+      points.valueOf = data.points
+    }
 
   } catch (error) {
     alert(error.message)
@@ -30,6 +43,7 @@ async function updateProfile() {
 
     const updates = {
       id: user.id,
+      points: points.valueOf,
       updated_at: new Date(),
     }
 
@@ -42,6 +56,7 @@ async function updateProfile() {
     loading.value = false
   }
 }
+
 
 async function signOut() {
   try {
@@ -62,6 +77,10 @@ async function signOut() {
       <h1 class="header">Welcome to your DineQuest account!</h1>
       <label for="email">Email</label>
       <input id="email" type="text" :value="session.user.email" disabled />
+    </div>
+    <div>
+      <label for="points">Points:</label>
+      <input id="points" type="text" :value="points" disabled/>
     </div>
     
     <div>
