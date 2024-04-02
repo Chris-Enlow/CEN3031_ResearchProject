@@ -1,12 +1,13 @@
 <script setup>
 import { supabase } from '../supabase'
 import { onMounted, ref, toRefs } from 'vue'
+import Roller from './Roller.vue'
 
 const props = defineProps(['session'])
 const { session } = toRefs(props)
 
 const loading = ref(true)
-const points = 0
+const points = ref(0)
 
 onMounted(() => {
   getProfile()
@@ -26,7 +27,7 @@ async function getProfile() {
     if (error && status !== 406) throw error
 
     if (data) {
-      points.valueOf = data.points
+      points.value = data.points
     }
 
   } catch (error) {
@@ -43,8 +44,8 @@ async function updateProfile() {
 
     const updates = {
       id: user.id,
-      points: points.valueOf,
-      updated_at: new Date(),
+      email: user.email,
+      points: points.value,
     }
 
     const { error } = await supabase.from('profiles').upsert(updates)
@@ -69,6 +70,30 @@ async function signOut() {
     loading.value = false
   }
 }
+
+async function roller() {
+  try {
+    loading.value = true
+    const { user } = session.value
+
+    if(points.value >= 300)
+      points.value-=300
+
+    const updates = {
+      id: user.id,
+      email: user.email,
+      points: points.value,
+    }
+
+    const { error } = await supabase.from('profiles').upsert(updates)
+
+    if (error) throw error
+  } catch (error) {
+    alert(error.message)
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
@@ -79,17 +104,21 @@ async function signOut() {
       <input id="email" type="text" :value="session.user.email" disabled />
     </div>
     <div>
-      <label for="points">Points:</label>
-      <input id="points" type="text" :value="points" disabled/>
+      <label for="points">Points: </label>
+      <span id="points" class="text-3xl font-bold">{{ points }}</span>
     </div>
-    
+
     <div>
-      <button class="button block" @click="signOut" :disabled="loading">Sign Out</button>
+      <button class="button block" @click="roller" :disabled="loading">ROLL FOR A COUPON</button>
     </div>
 
     <img src="/healthyFood.png"
       width="500" 
      height="350">
+
+    <div>
+      <button class="button block" @click="signOut" :disabled="loading">Sign Out</button>
+    </div>
 
   </form>
 </template>
