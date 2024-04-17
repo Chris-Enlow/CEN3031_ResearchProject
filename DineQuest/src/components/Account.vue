@@ -8,6 +8,8 @@ const { session } = toRefs(props)
 
 const loading = ref(true)
 const points = ref(0)
+const coupons = ref(0)
+
 
 onMounted(() => {
   getProfile()
@@ -46,6 +48,7 @@ async function updateProfile() {
       id: user.id,
       email: user.email,
       points: points.value,
+      coupons: coupons.value
     }
 
     const { error } = await supabase.from('profiles').upsert(updates)
@@ -71,18 +74,55 @@ async function signOut() {
   }
 }
 
+
 async function roller() {
   try {
     loading.value = true
     const { user } = session.value
 
-    if(points.value >= 300)
-      points.value-=300
+    if (points.value >= 300) {
+      points.value -= 300
+
+      // Generate a random number between 1 and 10
+      const random_number = Math.floor(Math.random() * 10) + 1;
+
+      // Check if the random number is 10 (10% chance)
+      if (random_number === 10) {
+        // Display "you win" message
+        window.alert("You win a coupon!");
+        coupons.value += 1
+      }
+    }
 
     const updates = {
       id: user.id,
       email: user.email,
       points: points.value,
+      coupons: coupons.value
+    }
+
+    const { error } = await supabase.from('profiles').upsert(updates)
+
+    if (error) throw error
+  } catch (error) {
+    alert(error.message)
+  } finally {
+    loading.value = false
+  }
+}
+async function spend() {
+  try {
+    loading.value = true
+    const { user } = session.value
+
+    if (coupons.value >= 1) {
+      coupons.value -= 1
+    }
+    const updates = {
+      id: user.id,
+      email: user.email,
+      points: points.value,
+      coupons: coupons.value
     }
 
     const { error } = await supabase.from('profiles').upsert(updates)
@@ -97,7 +137,7 @@ async function roller() {
 </script>
 
 <template>
-  <form class="form-widget" @submit.prevent="updateProfile">
+  <form id="app" class="form-widget" @submit.prevent="updateProfile" style="background-color: #fffec3; border: 2px solid #000; padding: 20px; border-radius: 10px;">
     <div>
       <h1 class="header">Welcome to your DineQuest account!</h1>
       <label for="email">Email</label>
@@ -107,9 +147,15 @@ async function roller() {
       <label for="points">Points: </label>
       <span id="points" class="text-3xl font-bold">{{ points }}</span>
     </div>
-
     <div>
-      <button class="button block" @click="roller" :disabled="loading">ROLL FOR A COUPON</button>
+      <label for="coupons">Coupons: </label>
+      <span id="coupons" class="text-3xl font-bold">{{ coupons }}</span>
+    </div>
+
+
+    <div class="button-container">
+      <button class="button" @click="roller" :disabled="loading" style="border: 2px solid #000; padding: 20px; border-radius: 10px;">ROLL FOR A COUPON</button>
+      <button class="button" @click="spend" :disabled="loading" style="border: 2px solid #000; padding: 20px; border-radius: 10px;">SPEND A COUPON</button>
     </div>
 
     <img src="/healthyFood.png"
@@ -117,7 +163,7 @@ async function roller() {
      height="350">
 
     <div>
-      <button class="button block" @click="signOut" :disabled="loading">Sign Out</button>
+      <button class="button block" @click="signOut" :disabled="loading" style="border: 2px solid #000; padding: 20px; border-radius: 10px;">Sign Out</button>
     </div>
 
   </form>
