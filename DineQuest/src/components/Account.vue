@@ -39,11 +39,14 @@ async function getProfile() {
   }
 }
 
+//update the profile
 async function updateProfile() {
+  //tries to get information from supabase
   try {
     loading.value = true
     const { user } = session.value
 
+    //update variables
     const updates = {
       id: user.id,
       email: user.email,
@@ -51,6 +54,7 @@ async function updateProfile() {
       coupons: coupons.value
     }
 
+    //insert updates
     const { error } = await supabase.from('profiles').upsert(updates)
 
     if (error) throw error
@@ -61,7 +65,7 @@ async function updateProfile() {
   }
 }
 
-
+//sign out
 async function signOut() {
   try {
     loading.value = true
@@ -74,7 +78,7 @@ async function signOut() {
   }
 }
 
-
+//roll for a chance to get a coupon
 async function roller() {
   try {
     loading.value = true
@@ -110,6 +114,8 @@ async function roller() {
     loading.value = false
   }
 }
+
+//spend a counpon
 async function spend() {
   try {
     loading.value = true
@@ -134,6 +140,42 @@ async function spend() {
     loading.value = false
   }
 }
+
+async function getPoints() {
+  try {
+    loading.value = true
+    const { user } = session.value
+
+    //input from the user for the reciept
+    let input = document.getElementById("reciept").value
+    
+    //if a valid length add 300 points
+    if(input.length > 9) {
+      alert("Got 300 Points!")
+      points.value += 300
+    }
+    else {
+      alert("Not A Reciept!")
+    }
+
+    //update
+    const updates = {
+      id: user.id,
+      email: user.email,
+      points: points.value,
+      coupons: coupons.value
+    }
+
+    const { error } = await supabase.from('profiles').upsert(updates)
+
+    if (error) throw error
+  } catch (error) {
+    alert(error.message)
+  } finally {
+    loading.value = false
+  }
+}
+
 </script>
 
 <template>
@@ -142,6 +184,12 @@ async function spend() {
       <h1 class="header">Welcome to your DineQuest account!</h1>
       <label for="email">Email</label>
       <input id="email" type="text" :value="session.user.email" disabled />
+    </div>
+    <div>
+      <label for="receipt">Reciept</label>
+      <input id="reciept" type="text"/>
+      <button class="button" @click="getPoints" :disabled="loading" style="border: 2px solid #000; padding: 5px; 
+      border-radius: 10px; margin-left: 10px; margin-top: 10px">GET POINTS</button>
     </div>
     <div>
       <label for="points">Points: </label>
