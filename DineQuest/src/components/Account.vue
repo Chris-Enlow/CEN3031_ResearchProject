@@ -2,6 +2,7 @@
 import "../style.css"
 import { supabase } from '../supabase'
 import { onMounted, ref, toRefs } from 'vue'
+import { watch } from 'vue';
 import Roller from './Roller.vue'
 
 const props = defineProps(['session'])
@@ -9,6 +10,8 @@ const { session } = toRefs(props)
 
 const loading = ref(true)
 const points = ref(0)
+const pointsChange = ref('');
+const pointsChanged = ref('');
 const coupons = ref(0)
 const foodItems = ref([])
 const orders = ref([])
@@ -87,7 +90,6 @@ async function addItem(item){
     loading.value = true
     const { user } = session.value
 
-    points.value += 50
     orders.value.push(item)
 
     const updates = {
@@ -106,6 +108,62 @@ async function addItem(item){
     loading.value = false
   }
 }
+
+async function pushAllItems() {
+  try {
+    loading.value = true;
+    const { user } = session.value;
+
+    points.value += orders.value.length * 50;
+    orders.value = [];
+
+    const updates = {
+      id: user.id,
+      email: user.email,
+      points: points.value,
+      coupons: coupons.value
+    };
+
+    const { error } = await supabase.from('profiles').upsert(updates);
+
+    if (error) throw error;
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    loading.value = false;
+  }
+}
+
+
+async function removeItem(item) {
+  try {
+    loading.value = true;
+    const { user } = session.value;
+
+    const index = orders.value.indexOf(item);
+
+    if (index !== -1) {
+      orders.value.splice(index, 1);
+    }
+
+    const updates = {
+      id: user.id,
+      email: user.email,
+      points: points.value,
+      coupons: coupons.value
+    };
+
+    const { error } = await supabase.from('profiles').upsert(updates);
+
+    if (error) throw error;
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    loading.value = false;
+  }
+}
+
+
 
 async function fetchFoodItems() {
   try {
@@ -141,13 +199,17 @@ async function roller() {
       points.value -= 300
 
       // Generate a random number between 1 and 10
-      const random_number = Math.floor(Math.random() * 10) + 1;
+      const random_number = Math.floor(Math.random() * 6) + 1;
 
       // Check if the random number is 10 (10% chance)
-      if (random_number === 10) {
+      if (random_number === 6) {
         // Display "you win" message
         window.alert("You win a coupon!");
         coupons.value += 1
+      }
+      else {
+        // Display "you win" message
+        window.alert("You didn't win a coupon.");
       }
     }
 
@@ -228,6 +290,30 @@ async function getPoints() {
     loading.value = false
   }
 }
+
+const updatePoints = (newValue, oldValue) => {
+  const difference = newValue - oldValue;
+
+  if (difference > 0) {
+    pointsChange.value = '+' + difference;
+    pointsChanged.value = 'increase';
+  } else if (difference === -300) {
+    pointsChange.value = '-300';
+    pointsChanged.value = 'decrease';
+  } else if (difference === -50) {
+    pointsChange.value = '-50';
+    pointsChanged.value = 'decrease';
+  }
+
+  setTimeout(() => {
+    pointsChange.value = '';
+    pointsChanged.value = '';
+  }, 1000);
+};
+
+// Watch for changes in points value
+watch(points, updatePoints);
+
 document.addEventListener('DOMContentLoaded', fetchFoodItems);
 </script>
 
@@ -246,7 +332,10 @@ document.addEventListener('DOMContentLoaded', fetchFoodItems);
     </div>
     <div>
       <label for="points">Points: </label>
-      <span id="points" class="text-3xl font-bold">{{ points }}</span>
+      <div>
+        <span class="points-value">{{ points }}</span>
+        <span class="points-change" :class="{ 'flash-green': pointsChanged === 'increase', 'flash-red': pointsChanged === 'decrease' }">{{ pointsChange }}</span>
+      </div>    
     </div>
     <div>
       <label for="coupons">Coupons: </label>
@@ -254,12 +343,12 @@ document.addEventListener('DOMContentLoaded', fetchFoodItems);
     </div>
 
 
-      <button class="button block" @click="toggleTableVisibility">Food Items</button>
+      <button class="button block" @click="toggleTableVisibility">Menu</button>
       <div>
       <table  v-if="showFoodItemsTable" style="width: 10%; text-align: center; margin-left: auto; margin-right: auto; background-color: #D6EEEE;" >
         <thead>
     <tr>
-      <th colspan="5">Menu</th>
+      <th colspan="5">Click to Add to Order</th>
     </tr>
   </thead>
   <tbody>
@@ -273,17 +362,23 @@ document.addEventListener('DOMContentLoaded', fetchFoodItems);
     </table>
     </div>
     <div v-if="!showFoodItemsTable">
-      <table style="width: 10%; text-align: center; position: absolute; top: 250px; left: 500px">
-      <thead>
+      <table style="width: 10%; position: absolute; top: 250px; left: 500px">
+      <thead style="text-align: center;">
         <tr>
-          <th>Orders</th>
+          <th>
+            <div>Orders</div>
+            <div>(Click to Remove)</div>
+          </th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="item in orders">
-          <td>{{ item }}</td>
+        <tr v-for="item in orders" :key="item">
+          <td>
+            <button class="button" @click="removeItem(item)">{{ item }}</button>
+          </td>
         </tr>
       </tbody>
+      <button class="button" @click="pushAllItems" :disabled="loading" style="border: 2px solid #000; padding: 10px; border-radius: 10px; margin-top: 10px;">Push All Items</button>
     </table>
       <div class="button-container">
         <button class="button" @click="roller" :disabled="loading" style="border: 2px solid #000; padding: 20px; border-radius: 10px;">ROLL FOR A COUPON</button>

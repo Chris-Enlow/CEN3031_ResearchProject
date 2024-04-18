@@ -54,6 +54,12 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+order {
+  position : absolute;
+  top : 200px;
+  right : 20px;
+}
+
 .card {
   padding: 2em;
 }
@@ -75,5 +81,38 @@ button:focus-visible {
   }
   button {
     background-color: #f9f9f9;
+  }
+  .button:hover {
+    background-color:#002ead;
+    transition: 0.7s;
+}
+  table {
+    border-collapse: collapse; /* Collapse border spacing */
+    width: 25%; /* Set table width to 100% */
+  }
+
+  th, td {
+    border: 1px solid black; /* Add a solid black border to table cells and headers */
+    padding: 8px; /* Add padding to improve spacing */
+    text-align: center; /* Align text to the left within cells */
+  }
+
+  th {
+    background-color: #f2f2f2; /* Add a background color to table headers */
+  }
+
+  .flash-green {
+    color: green;
+  }
+  
+  .flash-red {
+    color: red;
+  }
+  .points-change {
+    position: absolute;
+  }
+  .points-value, .points-change {
+    font-size: 2em;
+    font-weight: bold;
   }
 }
