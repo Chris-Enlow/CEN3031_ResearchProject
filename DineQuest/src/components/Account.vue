@@ -1,4 +1,5 @@
 <script setup>
+import "../style.css"
 import { supabase } from '../supabase'
 import { onMounted, ref, toRefs } from 'vue'
 import Roller from './Roller.vue'
@@ -9,10 +10,13 @@ const { session } = toRefs(props)
 const loading = ref(true)
 const points = ref(0)
 const coupons = ref(0)
-
+const foodItems = ref([])
+const orders = ref([])
+const showFoodItemsTable = ref(false)
 
 onMounted(() => {
   getProfile()
+  fetchFoodItems()
 })
 
 async function getProfile() {
@@ -76,6 +80,55 @@ async function signOut() {
   } finally {
     loading.value = false
   }
+}
+
+async function addItem(item){
+  try {
+    loading.value = true
+    const { user } = session.value
+
+    points.value += 50
+    orders.value.push(item)
+
+    const updates = {
+      id: user.id,
+      email: user.email,
+      points: points.value,
+      coupons: coupons.value
+    }
+
+    const { error } = await supabase.from('profiles').upsert(updates)
+
+    if (error) throw error
+  } catch (error) {
+    alert(error.message)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function fetchFoodItems() {
+  try {
+    loading.value = true
+    const { data, error } = await supabase.from('food').select('*')
+
+    if (error) throw error
+
+
+    if (data) {
+      foodItems.value = data // Set the fetched food items
+    }
+    console.log(data)
+
+  } catch (error) {
+    alert(error.message)
+  } finally {
+    loading.value = false
+  }
+}
+
+function toggleTableVisibility() {
+  showFoodItemsTable.value = !showFoodItemsTable.value
 }
 
 //roll for a chance to get a coupon
@@ -175,11 +228,11 @@ async function getPoints() {
     loading.value = false
   }
 }
-
+document.addEventListener('DOMContentLoaded', fetchFoodItems);
 </script>
 
 <template>
-  <form id="app" class="form-widget" @submit.prevent="updateProfile" style="background-color: #fffec3; border: 2px solid #000; padding: 20px; border-radius: 10px;">
+  <form id="app" class="container" @submit.prevent="updateProfile" style="background-color: #fffec3; border: 2px solid #000; padding: 20px; border-radius: 10px;">
     <div>
       <h1 class="header">Welcome to your DineQuest account!</h1>
       <label for="email">Email</label>
@@ -201,17 +254,50 @@ async function getPoints() {
     </div>
 
 
-    <div class="button-container">
-      <button class="button" @click="roller" :disabled="loading" style="border: 2px solid #000; padding: 20px; border-radius: 10px;">ROLL FOR A COUPON</button>
-      <button class="button" @click="spend" :disabled="loading" style="border: 2px solid #000; padding: 20px; border-radius: 10px;">SPEND A COUPON</button>
+      <button class="button block" @click="toggleTableVisibility">Food Items</button>
+      <div>
+      <table  v-if="showFoodItemsTable" style="width: 10%; text-align: center; margin-left: auto; margin-right: auto; background-color: #D6EEEE;" >
+        <thead>
+    <tr>
+      <th colspan="5">Menu</th>
+    </tr>
+  </thead>
+  <tbody>
+    <template v-for="(item, index) in foodItems">
+      <tr v-if="index % 5 === 0"></tr>
+      <td>
+        <button class="button" @click=addItem(item.name)>{{ item.name }}</button>
+      </td>
+    </template>
+  </tbody>
+    </table>
     </div>
+    <div v-if="!showFoodItemsTable">
+      <table style="width: 10%; text-align: center; position: absolute; top: 250px; left: 500px">
+      <thead>
+        <tr>
+          <th>Orders</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="item in orders">
+          <td>{{ item }}</td>
+        </tr>
+      </tbody>
+    </table>
+      <div class="button-container">
+        <button class="button" @click="roller" :disabled="loading" style="border: 2px solid #000; padding: 20px; border-radius: 10px;">ROLL FOR A COUPON</button>
+        <button class="button" @click="spend" :disabled="loading" style="border: 2px solid #000; padding: 20px; border-radius: 10px;">SPEND A COUPON</button>
+      </div>
 
-    <img src="/healthyFood.png"
-      width="500" 
-     height="350">
+      <img src="/healthyFood.png"
+        width="500" 
+      height="350">
+      
 
-    <div>
-      <button class="button block" @click="signOut" :disabled="loading" style="border: 2px solid #000; padding: 20px; border-radius: 10px;">Sign Out</button>
+      <div>
+        <button class="button block" @click="signOut" :disabled="loading" style="border: 2px solid #000; padding: 20px; border-radius: 10px;">Sign Out</button>
+      </div>
     </div>
 
   </form>
