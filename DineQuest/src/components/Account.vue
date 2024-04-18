@@ -3,7 +3,6 @@ import "../style.css"
 import { supabase } from '../supabase'
 import { onMounted, ref, toRefs } from 'vue'
 import { watch } from 'vue';
-import Roller from './Roller.vue'
 
 const props = defineProps(['session'])
 const { session } = toRefs(props)
@@ -16,6 +15,7 @@ const coupons = ref(0)
 const foodItems = ref([])
 const orders = ref([])
 const showFoodItemsTable = ref(false)
+const couponList = ref([])
 
 onMounted(() => {
   getProfile()
@@ -230,14 +230,65 @@ async function roller() {
   }
 }
 
+//get coupons
+async function getCoupons() {
+  try {
+    loading.value = true
+    const { data, error } = await supabase.from('coupons').select('*')
+
+    if (error) throw error
+
+
+    if (data) {
+      couponList.value = data //get the list of coupons
+    }
+    //alert(data)
+
+  } catch (error) {
+    alert(error.message)
+  } finally {
+    loading.value = false
+  }
+}
+
+//upload the coupon into the database
+async function pushCoupon(code) {
+  try {
+    loading.value = true
+    const { error } = await supabase.from('coupons').insert({code: code})
+
+    alert("Save your coupon code!")
+    alert(code)
+
+    if (error) throw error;
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    loading.value = false;
+  }
+}
+
 //spend a counpon
 async function spend() {
   try {
     loading.value = true
     const { user } = session.value
 
+    getCoupons()
+
     if (coupons.value >= 1) {
       coupons.value -= 1
+
+      //generate a random number
+      const ranNum = Math.floor(Math.random() * (999999999 - 100000000 + 1)) + 100000000;
+      const index = couponList.value.indexOf(ranNum)
+
+      while(index > -1) {
+        ranNum = Math.floor(Math.random() * (999999999 - 100000000 + 1)) + 100000000;
+      }
+
+      pushCoupon(ranNum)
+
     }
     const updates = {
       id: user.id,
@@ -270,7 +321,7 @@ async function getPoints() {
       points.value += 300
     }
     else {
-      alert("Not A Reciept!")
+      alert("Error!")
     }
 
     //update
