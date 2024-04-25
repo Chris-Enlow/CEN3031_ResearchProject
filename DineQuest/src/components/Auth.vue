@@ -5,12 +5,14 @@ import { supabase } from '../supabase'
 const loading = ref(false)
 const email = ref('')
 
+// Define the function to handle the login process
 const handleLogin = async () => {
   try {
     loading.value = true
     const { error } = await supabase.auth.signInWithOtp({
       email: email.value,
     })
+    // Error checking during authentication process
     if (error) throw error
     alert('Check your email for the login link!')
   } catch (error) {

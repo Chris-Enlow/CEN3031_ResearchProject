@@ -22,6 +22,7 @@ onMounted(() => {
   fetchFoodItems()
 })
 
+// Retrieves user profile from database
 async function getProfile() {
   try {
     loading.value = true
@@ -30,7 +31,7 @@ async function getProfile() {
     const { data, error, status } = await supabase
       .from('profiles')
       .select(`points`)
-      .eq('id', user.id)
+      .eq('id', user.id) // Filter by user ID
       .single()
 
     if (error && status !== 406) throw error
@@ -85,6 +86,7 @@ async function signOut() {
   }
 }
 
+// Adds an item to the user's order and updates the profile in the database
 async function addItem(item){
   try {
     loading.value = true
@@ -92,6 +94,7 @@ async function addItem(item){
 
     orders.value.push(item)
 
+    // Define updates object with user data
     const updates = {
       id: user.id,
       email: user.email,
@@ -109,6 +112,7 @@ async function addItem(item){
   }
 }
 
+// Pushes all items in the order to the database and updates the user's profile
 async function pushAllItems() {
   try {
     loading.value = true;
@@ -134,7 +138,7 @@ async function pushAllItems() {
   }
 }
 
-
+// Removes an item from the user's order and updates the profile
 async function removeItem(item) {
   try {
     loading.value = true;
@@ -164,7 +168,7 @@ async function removeItem(item) {
 }
 
 
-
+// Fetches food items from the database
 async function fetchFoodItems() {
   try {
     loading.value = true
@@ -184,7 +188,7 @@ async function fetchFoodItems() {
     loading.value = false
   }
 }
-
+// Toggles the visibility of the food items table
 function toggleTableVisibility() {
   showFoodItemsTable.value = !showFoodItemsTable.value
 }
@@ -230,7 +234,7 @@ async function roller() {
   }
 }
 
-//get coupons
+// Get coupons
 async function getCoupons() {
   try {
     loading.value = true
@@ -251,7 +255,7 @@ async function getCoupons() {
   }
 }
 
-//upload the coupon into the database
+// Upload the coupon into the database
 async function pushCoupon(code) {
   try {
     loading.value = true
@@ -268,7 +272,7 @@ async function pushCoupon(code) {
   }
 }
 
-//spend a counpon
+// Spend a counpon
 async function spend() {
   try {
     loading.value = true
@@ -279,7 +283,7 @@ async function spend() {
     if (coupons.value >= 1) {
       coupons.value -= 1
 
-      //generate a random number
+      // Generate a random number
       const ranNum = Math.floor(Math.random() * (999999999 - 100000000 + 1)) + 100000000;
       const index = couponList.value.indexOf(ranNum)
 
@@ -312,10 +316,10 @@ async function getPoints() {
     loading.value = true
     const { user } = session.value
 
-    //input from the user for the reciept
+    // Input from the user for the reciept
     let input = document.getElementById("reciept").value
     
-    //if a valid length add 300 points
+    // If a valid length add 300 points
     if(input.length > 9) {
       alert("Got 300 Points!")
       points.value += 300
@@ -324,7 +328,7 @@ async function getPoints() {
       alert("Error!")
     }
 
-    //update
+    // Update
     const updates = {
       id: user.id,
       email: user.email,
@@ -342,6 +346,7 @@ async function getPoints() {
   }
 }
 
+// Watches for changes in points value and updates accordingly.
 const updatePoints = (newValue, oldValue) => {
   const difference = newValue - oldValue;
 
